@@ -101,10 +101,10 @@ pacf(df$Volume)
 
 ```{r}
 # Splitting:
-set.seed(123) # for reproducibility
-sample_index <- sample(1:nrow(df), 0.7 * nrow(df))
-train_data <- df[sample_index, ]
-test_data <- df[-sample_index, ]
+#set.seed(123) # for reproducibility
+#sample_index <- sample(1:nrow(df), 0.7 * nrow(df))
+#train_data <- df[sample_index, ]
+#test_data <- df[-sample_index, ]
 
 # Stationarity Tests:
 adf.test(train_data$Open)
