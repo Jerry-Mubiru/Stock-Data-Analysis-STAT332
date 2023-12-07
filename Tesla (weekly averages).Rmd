@@ -1,0 +1,138 @@
+---
+title: "Tesla Stock - with weekly average data points"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: "2023-12-04"
+---
+
+```{r}
+# Loading the libraries
+library(ggplot2)
+library(forecast)
+library(tseries)
+library(tseries)
+library(TSA)
+library(readxl)
+library(xts)
+
+# Loading the data
+df <- read_excel("TeslaStockData.xlsx")
+
+# Obtaining weekly averages (instead of working with individual data points)
+df$Date <- as.Date(df$Date)   # Convert 'Date' to Date format
+df_xts <- xts(df[, -1], order.by = df$Date)  # Convert to xts time series
+df_weekly <- apply.weekly(df_xts, colMeans)  # Calculate weekly averages
+df_weekly <- as.data.frame(df_weekly) # Convert back to data frame
+df_weekly$Date <- index(df_weekly)  # Add the 'Date' column back
+
+#obtaining monthly average
+df_monthly <- apply.monthly(df_xts, colMeans)
+
+# Exploring the data:
+str(df_weekly)  # Checking the data structure
+head(df_weekly)  # Displaying the first few rows
+summary(df_weekly)  # Summary statistics
+
+# Boxplots for each variable
+par(mfrow=c(2,2))
+boxplot(df$Open, main="Boxplot - Opening Price")
+boxplot(df$Close, main="Boxplot - Closing price")
+boxplot(df$High, main="Boxplot - High Price")
+boxplot(df$Low, main="Boxplot - Low Price")
+boxplot(df$Volume, main="Boxplot - Volume")
+```
+
+```{r echo=FALSE}
+# Time series plots
+ggplot(df_weekly, aes(x = Date, y = Open)) + geom_line() + labs(title = "Time Series Plot - Weekly Average Opening Price")
+ggplot(df_weekly, aes(x = Date, y = Close)) + geom_line() + labs(title = "Time Series Plot - Weekly Average Closing Price")
+ggplot(df_weekly, aes(x = Date, y = High)) + geom_line() + labs(title = "Time Series Plot - Weekly Average Highest price")
+ggplot(df_weekly, aes(x = Date, y = Low)) + geom_line() + labs(title = "Time Series Plot - Weekly Average Lowest price")
+ggplot(df_weekly, aes(x = Date, y = Volume)) + geom_line() + labs(title = "Time Series Plot - Weekly Average Volume")
+```
+
+```{r}
+# Decomposition of the time series plots (additive)
+decomp_additive <- decompose(ts(df$Open, frequency = 365), type = "additive")
+plot(decomp_additive)
+decomp_additive <- decompose(ts(df$Close, frequency = 365), type = "additive")
+plot(decomp_additive)
+decomp_additive <- decompose(ts(df$High, frequency = 365), type = "additive")
+plot(decomp_additive)
+decomp_additive <- decompose(ts(df$Low, frequency = 365), type = "additive")
+plot(decomp_additive)
+decomp_additive <- decompose(ts(df_weekly$Volume, frequency = 52), type = "additive")
+plot(decomp_additive)
+```
+
+```{r}
+# Decomposition of the time series plot (multiplicative)
+decomp_multiplicative <- decompose(ts(df$Open, frequency = 365), type = "multiplicative")
+plot(decomp_multiplicative)
+decomp_multiplicative <- decompose(ts(df$Close, frequency = 365), type = "multiplicative")
+plot(decomp_multiplicative)
+decomp_multiplicative <- decompose(ts(df$High, frequency = 365), type = "multiplicative")
+plot(decomp_multiplicative)
+decomp_multiplicative <- decompose(ts(df$Low, frequency = 365), type = "multiplicative")
+plot(decomp_multiplicative)
+decomp_multiplicative <- decompose(ts(df$Volume, frequency = 365), type = "multiplicative")
+plot(decomp_multiplicative)
+```
+
+```{r}
+# Autocorrelation plots (ACF)
+acf(df$Open)
+acf(df$Close)
+acf(df$High)
+acf(df$Low)
+acf(df$Volume)
+```
+
+```{r}
+# Partial autocorrelation plots (PACF)
+pacf(df$Open)
+pacf(df$Close)
+pacf(df$High)
+pacf(df$Low)
+pacf(df$Volume)
+```
+
+```{r}
+# Splitting:
+set.seed(123) # for reproducibility
+sample_index <- sample(1:nrow(df), 0.7 * nrow(df))
+train_data <- df[sample_index, ]
+test_data <- df[-sample_index, ]
+
+# Stationarity Tests:
+adf.test(train_data$Open)
+adf.test(train_data$Close)
+adf.test(train_data$High)
+adf.test(train_data$Low)
+adf.test(train_data$Volume)
+```
+
+```{r}
+# Seasonal ARIMAs
+sarima_model_open <- auto.arima(train_data$Open)
+summary(sarima_model_open)
+sarima_model_close <- auto.arima(train_data$Close)
+summary(sarima_model_close)
+sarima_model_high <- auto.arima(train_data$High)
+summary(sarima_model_high)
+sarima_model_low <- auto.arima(train_data$Low)
+summary(sarima_model_low)
+sarima_model_volume <- auto.arima(train_data$Volume)
+summary(sarima_model_volume)
+```
+
+```{r}
+# Box-Ljung Test
+Box.test(residuals(sarima_model_open), type="Ljung-Box", lag=log(length(residuals(sarima_model_open))))
+Box.test(residuals(sarima_model_close), type="Ljung-Box", lag=log(length(residuals(sarima_model_close))))
+Box.test(residuals(sarima_model_high), type="Ljung-Box", lag=log(length(residuals(sarima_model_high))))
+Box.test(residuals(sarima_model_low), type="Ljung-Box", lag=log(length(residuals(sarima_model_low))))
+Box.test(residuals(sarima_model_volume), type="Ljung-Box", lag=log(length(residuals(sarima_model_volume))))
+```
