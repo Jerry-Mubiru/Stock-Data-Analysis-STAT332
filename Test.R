@@ -25,7 +25,7 @@ sarima_model_volume <- auto.arima(df_monthly$Volume)
 summary(sarima_model_volume)
 
 #if not, G(ARCH) - If both, first do the SARIMA then do the G(ARCH) to the residuals
-sarima_residuals <- residuals(sarima_model_volume)
+(sarima_residuals <- residuals(sarima_model_volume))
 
 #After model decision - test hypotheses to validate stationarity, estimate model parameters
 
@@ -41,7 +41,7 @@ test_data <- df_monthly$Volume[-sample_index]
 arima_model <- auto.arima(train_data)
 
 # Generating predictions for the testing data
-(forecast_values <- forecast(sarima_model_volume, h = length(test_data), level = c(95)))
+(forecast_values <- forecast(arima_model, h = length(test_data)))
 
 plot(forecast_values, main = "Auto ARIMA Forecast", xlab = "Time", ylab = "Values")
 lines(test_data, col = "blue")  # Add the testing time series data for comparison
@@ -56,9 +56,4 @@ adf.test(log(df_monthly$Volume))
 
 # Perform the Ljung-Box test
 ljung_box_test <- Box.test(sarima_residuals, lag = 40, type = "Ljung-Box")
-
-# Display the test results
-print(ljung_box_test)
-
-
 
